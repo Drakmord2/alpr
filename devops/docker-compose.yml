@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+
+    python-cv:
+        build: ../
+        volumes:
+            - ../:/var/www/alpr
+        ports:
+            - 6000:6000
+        networks:
+            - python-cv-net
+
+networks:
+    python-cv-net:
+        driver: bridge
