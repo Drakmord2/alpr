@@ -1,20 +1,19 @@
 import cv2 as cv
-import matplotlib
-matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
 
-class App:
+class Alpr:
     def __init__(self):
         img = cv.imread('../base/cars-1.png', 0)
 
-        self.histogram(img, 'Original Image', 121)
+        self.histogram(img, 'Original Image', 211)
 
         equ = cv.equalizeHist(img)
         cv.imwrite('../bin/cars-1-equalized.png', equ)
 
-        self.histogram(equ, 'Equalized Image', 122)
+        self.histogram(equ, 'Equalized Image', 212)
 
+        plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
         plt.savefig('../bin/histograms.png')
 
         ret, threshold = cv.threshold(img, 127, 255, cv.THRESH_BINARY)
@@ -25,14 +24,16 @@ class App:
         cv.imwrite('../bin/cars-1-mean-threshold.png', mean)
         cv.imwrite('../bin/cars-1-gausian-threshold.png', gausian)
 
-    def histogram(self, img, title, plot_num):
+    @staticmethod
+    def histogram(img, title, plot_num):
         hist = cv.calcHist([img], [0], None, [256], [0, 256])
+
         plt.subplot(plot_num)
         plt.plot(hist)
         plt.xlim([0, 256])
         plt.title(title)
-        plt.xticks([]), plt.yticks([])
+        plt.xticks([0, 64, 192, 256])
 
 
 if __name__ == '__main__':
-    app = App()
+    Alpr()

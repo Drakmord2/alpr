@@ -5,6 +5,9 @@ FROM jjanzic/docker-python3-opencv:contrib-opencv-3.4.1
 # Dependencies
 RUN pip install matplotlib
 
+# Setup Matplotlib
+COPY ./devops/matplotlibrc /root/.config/matplotlib/matplotlibrc
+
 # Environment
 ENV APP_ROOT="/var/www"
 
