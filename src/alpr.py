@@ -1,28 +1,37 @@
+import datetime as dt
 import cv2 as cv
+import numpy as np
+from pathlib import Path
 from matplotlib import pyplot as plt
 
 
 class Alpr:
-    def __init__(self):
-        img = cv.imread('../base/cars-1.png', 0)
+    def __init__(self, img_name):
+        img = cv.imread('../base/'+img_name+'.png', 0)
 
         self.histogram(img, 'Original Image', 211)
 
+        print('- Equalizing Histogram')
         equ = cv.equalizeHist(img)
-        cv.imwrite('../bin/cars-1-equalized.png', equ)
 
         self.histogram(equ, 'Equalized Image', 212)
 
         plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-        plt.savefig('../bin/histograms.png')
+        plt.savefig('../bin/'+img_name+'-histograms.png')
+        plt.close()
 
-        ret, threshold = cv.threshold(img, 127, 255, cv.THRESH_BINARY)
-        mean = cv.adaptiveThreshold(img, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 11, 2)
+        print('- Getting Gradients')
+        kernel = np.ones((3, 3), np.float32) / 9
+        filtered = cv.filter2D(img, -1, kernel)
+        laplacian = cv.Laplacian(filtered, cv.CV_64F, ksize=5)
+
+        cv.imwrite('../bin/'+img_name+'-laplacian.png', laplacian)
+
+        print('- Applying Threshold')
         gausian = cv.adaptiveThreshold(img, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 11, 2)
 
-        cv.imwrite('../bin/cars-1-threshold.png', threshold)
-        cv.imwrite('../bin/cars-1-mean-threshold.png', mean)
-        cv.imwrite('../bin/cars-1-gausian-threshold.png', gausian)
+        print('- Saving Image')
+        cv.imwrite('../bin/'+img_name+'-gausian-threshold.png', gausian)
 
     @staticmethod
     def histogram(img, title, plot_num):
@@ -36,4 +45,22 @@ class Alpr:
 
 
 if __name__ == '__main__':
-    Alpr()
+    base = Path('../base')
+    images = list(base.glob('**/*.png'))
+    start_time = dt.datetime.utcnow()
+
+    print('\t-- ALPR --')
+    for i in images:
+        file_name = i.parts[2]
+        image_name = file_name.split('.png')[0]
+
+        print('\n[ Processing '+file_name+' ] ')
+        Alpr(image_name)
+
+    end_time = dt.datetime.utcnow()
+    total_time = (end_time - start_time).total_seconds()
+    imageCount = len(images)
+
+    print('\nStats:')
+    print('- Images Processed: '+str(imageCount))
+    print('- Time elapsed: '+str(total_time)+' seconds\n')
