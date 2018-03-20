@@ -18,8 +18,8 @@ def main():
 
         if image_name:
             image_count += 1
-            print('\n[ Processing '+file_name+' ] ')
-            app.process(image_name)
+            print('\nProcessing [ '+file_name+' ] ')
+            app.process_image(image_name)
 
     stats(image_count, start_time)
 

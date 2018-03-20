@@ -10,44 +10,29 @@ class Alpr:
         self.img_name = ''
         self.options = options
 
-    def process(self, img_name):
+    def process_image(self, img_name):
         self.img_name = img_name
 
-        img = cv.imread('../base/' + self.img_name + '.png', 0)
+        img = cv.imread('../base/' + self.img_name + '.png')
 
-        print('- Equalizing Histogram')
-        equ = cv.equalizeHist(img)
+        highlight = self.highlight_plate(img)
 
-        self.plot_histograms(img, equ)
+        print('- Writting image')
+        cv.imwrite('../bin/' + self.img_name + '.png', highlight)
 
-        print('- Getting Gradients')
+    def highlight_plate(self, img):
+        print('- Equalizing histogram')
+        img_yuv = cv.cvtColor(img, cv.COLOR_BGR2YUV)
+        img_yuv[:, :, 0] = cv.equalizeHist(img_yuv[:, :, 0])
+        img_output = cv.cvtColor(img_yuv, cv.COLOR_YUV2BGR)
+
+        print('- Applying smoothing filter')
         kernel = np.ones((3, 3), np.float32) / 9
-        filtered = cv.filter2D(img, -1, kernel)
+        filtered = cv.filter2D(img_output, -1, kernel)
         laplacian = cv.Laplacian(filtered, cv.CV_64F, ksize=5)
 
-        cv.imwrite('../bin/' + self.img_name + '-laplacian.png', laplacian)
+        print('- Merging layers')
+        sub = cv.subtract(img_output, laplacian, dtype=cv.CV_64F)
+        result = cv.add(img_output, sub, dtype=cv.CV_64F)
 
-        print('- Applying Threshold')
-        gausian = cv.adaptiveThreshold(img, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 11, 2)
-
-        print('- Saving Image')
-        cv.imwrite('../bin/' + self.img_name + '-gausian-threshold.png', gausian)
-
-    def plot_histograms(self, img, equ):
-        hist = cv.calcHist([img], [0], None, [256], [0, 256])
-        self.subplot(hist, 'Original Image', 211)
-
-        hist = cv.calcHist([equ], [0], None, [256], [0, 256])
-        self.subplot(hist, 'Equalized Image', 212)
-
-        plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-        plt.savefig('../bin/' + self.img_name + '-histograms.png')
-        plt.close()
-
-    @staticmethod
-    def subplot(hist, title, plot_num):
-        plt.subplot(plot_num)
-        plt.plot(hist)
-        plt.xlim([0, 256])
-        plt.title(title)
-        plt.xticks([0, 64, 192, 256])
+        return result
