@@ -1,32 +1,25 @@
-import datetime as dt
 import cv2 as cv
 import numpy as np
-from pathlib import Path
 from matplotlib import pyplot as plt
 
 
 class PlotUtil:
-    def __init__(self):
-        pass
+    def __init__(self, img_name):
+        self.img_name = img_name
 
     def plot_bgr_histograms(self, img, equ):
-        color = ('b', 'g', 'r')
+        hist = cv.calcHist([img], [0], None, [256], [0, 256])
+        self.subplot(hist, 'Original Image', 211)
 
-        plt.subplot(211)
-        for i, col in enumerate(color):
-            hist = cv.calcHist([img], [i], None, [256], [0, 256])
-            self.subplot(hist, 'Original Image')
-
-        plt.subplot(212)
-        for i, col in enumerate(color):
-            hist = cv.calcHist([equ], [i], None, [256], [0, 256])
-            self.subplot(hist, 'Equalized Image')
+        hist = cv.calcHist([equ], [0], None, [256], [0, 256])
+        self.subplot(hist, 'Equalized Image', 212)
 
         plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
         plt.savefig('../bin/' + self.img_name + '-histograms.png')
         plt.close()
 
-    def subplot(self, hist, title):
+    def subplot(self, hist, title, plot_num):
+        plt.subplot(plot_num)
         plt.plot(hist)
         plt.xlim([0, 256])
         plt.title(title)

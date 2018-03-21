@@ -1,7 +1,5 @@
-import datetime as dt
 import cv2 as cv
 import numpy as np
-from pathlib import Path
 from matplotlib import pyplot as plt
 
 
@@ -13,7 +11,7 @@ class Alpr:
     def process_image(self, img_name):
         self.img_name = img_name
 
-        img = cv.imread('../base/' + self.img_name + '.png')
+        img = cv.imread('../base/' + self.img_name + '.png', 0)
 
         highlight = self.highlight_plate(img)
 
@@ -22,17 +20,27 @@ class Alpr:
 
     def highlight_plate(self, img):
         print('- Equalizing histogram')
-        img_yuv = cv.cvtColor(img, cv.COLOR_BGR2YUV)
-        img_yuv[:, :, 0] = cv.equalizeHist(img_yuv[:, :, 0])
-        img_output = cv.cvtColor(img_yuv, cv.COLOR_YUV2BGR)
+        equalized = cv.equalizeHist(img)
 
         print('- Applying smoothing filter')
         kernel = np.ones((3, 3), np.float32) / 9
-        filtered = cv.filter2D(img_output, -1, kernel)
-        laplacian = cv.Laplacian(filtered, cv.CV_64F, ksize=5)
+        filtered = cv.filter2D(equalized, -1, kernel)
 
-        print('- Merging layers')
-        sub = cv.subtract(img_output, laplacian, dtype=cv.CV_64F)
-        result = cv.add(img_output, sub, dtype=cv.CV_64F)
+        print('- Enhancing contrast')
+        result = self.enhance_contrast(filtered)
 
         return result
+
+    def enhance_contrast(self, img):
+        kernel = np.ones((3, 3), np.uint8)
+
+        top_hat = cv.morphologyEx(img, cv.MORPH_TOPHAT, kernel)
+        black_hat = cv.morphologyEx(img, cv.MORPH_BLACKHAT, kernel)
+
+        print('  - Removing noise from background')
+        img_top = cv.add(img, top_hat)
+
+        print('  - Removing noise from foreground')
+        enhanced = cv.subtract(img_top, black_hat)
+
+        return enhanced
