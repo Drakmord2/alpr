@@ -26,7 +26,7 @@ class Alpr:
         kernel = np.ones((3, 3), np.float32) / 9
         filtered = cv.filter2D(equalized, -1, kernel)
 
-        print('- Enhancing contrast')
+        print('- Improving contrast')
         result = self.enhance_contrast(filtered)
 
         return result
@@ -37,7 +37,7 @@ class Alpr:
         top_hat = cv.morphologyEx(img, cv.MORPH_TOPHAT, kernel)
         black_hat = cv.morphologyEx(img, cv.MORPH_BLACKHAT, kernel)
 
-        print('  - Removing noise from background')
+        print('  - Enhancing details')
         img_top = cv.add(img, top_hat)
 
         print('  - Removing noise from foreground')
