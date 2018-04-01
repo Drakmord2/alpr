@@ -1,6 +1,9 @@
 import cv2 as cv
 import numpy as np
 from matplotlib import pyplot as plt
+from model.hmf import HomomorphicFilter
+from model.histogram import Histogram
+from util.plotUtil import PlotUtil
 
 
 class Alpr:
@@ -12,22 +15,38 @@ class Alpr:
         self.img_name = img_name
 
         img = cv.imread('../base/' + self.img_name + '.png', 0)
+        img = cv.resize(img, (0, 0), fx=0.8, fy=0.8)
 
-        highlight = self.highlight_plate(img)
+        space = self.space_domain_filtering(img)
+        freq = self.frequency_domain_filtering(space)
 
         print('- Writting image')
-        cv.imwrite('../bin/' + self.img_name + '.png', highlight)
+        cv.imwrite('../bin/' + self.img_name + '.png', freq)
 
-    def highlight_plate(self, img):
-        print('- Equalizing histogram')
-        equalized = cv.equalizeHist(img)
+    def frequency_domain_filtering(self, img):
+        print('- Frequency-domain Filtering')
 
-        print('- Applying smoothing filter')
+        print('  - Homomorphic Filter')
+        hmf = HomomorphicFilter(img)
+        filtered = hmf.filter()
+
+        print('  - Equalizing histogram')
+        result, _, _, _ = Histogram.equalize(filtered)
+
+        return result
+
+    def space_domain_filtering(self, img):
+        print('- Space-domain Filtering')
+
+        print('  - Equalizing histogram')
+        equalized, _, _, _ = Histogram.equalize(img)
+
+        print('  - Applying smoothing filter')
         kernel = np.ones((3, 3), np.float32) / 9
-        filtered = cv.filter2D(equalized, -1, kernel)
+        filtered = cv.filter2D(equalized, -1, kernel)  # TODO Implement filter
 
-        print('- Improving contrast')
-        result = self.enhance_contrast(filtered)
+        print('  - Improving contrast')
+        result = self.enhance_contrast(filtered)  # TODO Implement functions
 
         return result
 

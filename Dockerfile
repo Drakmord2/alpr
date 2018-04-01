@@ -3,6 +3,7 @@
 FROM jjanzic/docker-python3-opencv:contrib-opencv-3.4.1
 
 # Dependencies
+RUN pip install scipy
 RUN pip install matplotlib
 
 # Setup Matplotlib
