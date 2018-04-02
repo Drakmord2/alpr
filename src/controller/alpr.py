@@ -3,7 +3,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 from model.hmf import HomomorphicFilter
 from model.histogram import Histogram
-from util.plotUtil import PlotUtil
 
 
 class Alpr:
@@ -17,11 +16,12 @@ class Alpr:
         img = cv.imread('../base/' + self.img_name + '.png', 0)
         img = cv.resize(img, (0, 0), fx=0.8, fy=0.8)
 
+        freq = self.frequency_domain_filtering(img)
         space = self.space_domain_filtering(img)
-        freq = self.frequency_domain_filtering(space)
 
         print('- Writting image')
-        cv.imwrite('../bin/' + self.img_name + '.png', freq)
+        cv.imwrite('../bin/' + self.img_name + '-space.png', space)
+        cv.imwrite('../bin/' + self.img_name + '-frequency.png', freq)
 
     def frequency_domain_filtering(self, img):
         print('- Frequency-domain Filtering')
@@ -31,9 +31,9 @@ class Alpr:
         filtered = hmf.filter()
 
         print('  - Equalizing histogram')
-        result, _, _, _ = Histogram.equalize(filtered)
+        equalized, _, _, _ = Histogram.equalize(filtered)
 
-        return result
+        return equalized
 
     def space_domain_filtering(self, img):
         print('- Space-domain Filtering')

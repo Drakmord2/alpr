@@ -11,40 +11,49 @@ class HomomorphicFilter:
         rows = self.img.shape[0]
         cols = self.img.shape[1]
 
-        # Convert image to 0 and 1, then do log(1 + I)
-        log = np.log1p(np.array(self.img, dtype="float") / 255)
+        # Image normalization
+        normalized = np.array(self.img, dtype="float") / 255
 
-        # Create Gaussian mask of sigma = 10
+        # Apply log(1 + I)
+        log = np.log1p(normalized)
+
+        # Create Gaussian mask
+        sigma = 15
         M = 2*rows + 1
         N = 2*cols + 1
-        sigma = 10
         (X, Y) = np.meshgrid(np.linspace(0, N-1, N), np.linspace(0, M-1, M))
         center_x = np.ceil(N/2)
         center_y = np.ceil(M/2)
         gaussian_numerator = (X - center_x)**2 + (Y - center_y)**2
 
-        # Low pass and high pass filters
-        h_low = np.exp(- gaussian_numerator / (2*sigma*sigma))
+        # Filters
+        h_low = np.exp(- gaussian_numerator / (2 * sigma**2))
         h_high = 1 - h_low
 
-        # Move origin of filters so that it's at the top left corner to
-        # match with the input image
+        # Move the origin of filters
         h_low_shift = scipy.fftpack.ifftshift(h_low.copy())
         h_high_shift = scipy.fftpack.ifftshift(h_high.copy())
 
-        # Filter the image and crop
+        # Fourier Transform
         func = scipy.fftpack.fft2(log.copy(), (M, N))
-        out_low = scipy.real(scipy.fftpack.ifft2(func.copy() * h_low_shift, (M, N)))
-        out_high = scipy.real(scipy.fftpack.ifft2(func.copy() * h_high_shift, (M, N)))
 
-        # Set scaling factors and add
-        gamma1 = 0.3
-        gamma2 = 1.5
-        out = gamma1*out_low[0:rows, 0:cols] + gamma2*out_high[0:rows, 0:cols]
+        # Filtering and Inverse Fourier Transform
+        low_pass = func.copy() * h_low_shift
+        out_low = scipy.real(scipy.fftpack.ifft2(low_pass, (M, N)))
 
-        # Anti-log then rescale to [0,1]
+        high_pass = func.copy() * h_high_shift
+        out_high = scipy.real(scipy.fftpack.ifft2(high_pass, (M, N)))
+
+        # High-frequency emphasis filter
+        alfa = 0.5
+        beta = 1.5
+        out = (alfa * out_low[0:rows, 0:cols]) + (beta * out_high[0:rows, 0:cols])
+
+        # Apply exp(I) - 1
         hmf = np.expm1(out)
-        hmf = (hmf - np.min(hmf)) / (np.max(hmf) - np.min(hmf))
-        hmf2 = np.array(255*hmf, dtype="uint8")
 
-        return hmf2
+        # Image denormalization
+        hmf = (hmf - np.min(hmf)) / (np.max(hmf) - np.min(hmf))
+        result = np.array(hmf * 255, dtype="uint8")
+
+        return result
