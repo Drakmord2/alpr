@@ -1,6 +1,7 @@
 import datetime as dt
 from pathlib import Path
 from controller.alpr import Alpr
+from model.noise import Noise
 
 
 def main():

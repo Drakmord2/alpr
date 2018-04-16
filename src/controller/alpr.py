@@ -3,6 +3,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 from model.hmf import HomomorphicFilter
 from model.histogram import Histogram
+from model.noise import Noise
+from model.medianf import MedianFilter
 
 
 class Alpr:
@@ -16,12 +18,32 @@ class Alpr:
         img = cv.imread('../base/' + self.img_name + '.png', 0)
         img = cv.resize(img, (0, 0), fx=0.8, fy=0.8)
 
-        freq = self.frequency_domain_filtering(img)
-        space = self.space_domain_filtering(img)
+        img = self.noise_filtering(img)
+
+        processed = self.frequency_domain_filtering(img)
 
         print('- Writting image')
-        cv.imwrite('../bin/' + self.img_name + '-space.png', space)
-        cv.imwrite('../bin/' + self.img_name + '-frequency.png', freq)
+        cv.imwrite('../bin/' + self.img_name + '.png', processed)
+
+    def noise_filtering(self, img):
+        print('- Applying noise')
+        noise = Noise("salt-pepper", img)
+        noisy = noise.apply()
+
+        cv.imwrite('../bin/' + self.img_name + '-noisy.png', noisy)
+
+        print('- Filtering noise')
+        window = 1
+        thresold = 1
+        mf = MedianFilter(noisy, window, thresold)
+
+        clean = mf.filter()
+        cv.imwrite('../bin/' + self.img_name + '-clean.png', clean)
+
+        clean = mf.adaptive_filter()
+        cv.imwrite('../bin/' + self.img_name + '-clean-adpt.png', clean)
+
+        return clean
 
     def frequency_domain_filtering(self, img):
         print('- Frequency-domain Filtering')

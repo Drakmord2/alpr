@@ -35,13 +35,13 @@ class HomomorphicFilter:
         h_high_shift = scipy.fftpack.ifftshift(h_high.copy())
 
         # Fourier Transform
-        func = scipy.fftpack.fft2(log.copy(), (M, N))
+        i_freq = scipy.fftpack.fft2(log.copy(), (M, N))
 
         # Filtering and Inverse Fourier Transform
-        low_pass = func.copy() * h_low_shift
+        low_pass = i_freq.copy() * h_low_shift
         out_low = scipy.real(scipy.fftpack.ifft2(low_pass, (M, N)))
 
-        high_pass = func.copy() * h_high_shift
+        high_pass = i_freq.copy() * h_high_shift
         out_high = scipy.real(scipy.fftpack.ifft2(high_pass, (M, N)))
 
         # High-frequency emphasis filter
