@@ -43,19 +43,18 @@ class MedianFilter:
 
                 median = self.get_median(target_vector, vlength)
 
-                if self.threshold <= 0:
+                # MAD(x) = median(|x - median|)
+                # sig = 1.4826 * MAD(x)
+                mad = np.zeros(vlength)
+                for n in range(vlength):
+                    mad[n] = np.abs(int(target_vector[n]) - int(median))
+
+                mad = np.sort(mad)
+                index = vlength // 2
+                sig = 1.4826 * (mad[index])
+
+                if np.abs(int(image_array[x, y]) - int(median)) > (self.threshold * sig):
                     image_array[x, y] = median
-                else:
-                    scale = np.zeros(vlength)
-                    for n in range(vlength):
-                        scale[n] = np.abs(int(target_vector[n]) - int(median))
-
-                    scale = np.sort(scale)
-                    index = vlength // 2
-                    sk = 1.4826 * (scale[index])
-
-                    if np.abs(int(image_array[x, y]) - int(median)) > (self.threshold * sk):
-                        image_array[x, y] = median
 
         image = np.reshape(image_array, (xlength, ylength))
 

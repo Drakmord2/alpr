@@ -17,6 +17,7 @@ class Alpr:
 
         img = cv.imread('../base/' + self.img_name + '.png', 0)
         img = cv.resize(img, (0, 0), fx=0.8, fy=0.8)
+        cv.imwrite('../bin/' + self.img_name + '-gray.png', img)
 
         img = self.noise_filtering(img)
 
@@ -37,11 +38,14 @@ class Alpr:
         thresold = 1
         mf = MedianFilter(noisy, window, thresold)
 
-        clean = mf.filter()
-        cv.imwrite('../bin/' + self.img_name + '-clean.png', clean)
+        median = mf.filter()
+        cv.imwrite('../bin/' + self.img_name + '-clean.png', median)
 
+        adaptive = mf.adaptive_filter()
+        cv.imwrite('../bin/' + self.img_name + '-clean-adpt.png', adaptive)
+
+        mf = MedianFilter(img, window, thresold)
         clean = mf.adaptive_filter()
-        cv.imwrite('../bin/' + self.img_name + '-clean-adpt.png', clean)
 
         return clean
 

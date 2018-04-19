@@ -20,7 +20,7 @@ class Noise:
 
     def salt_pepper_noise(self):
         s_vs_p = 0.5
-        amount = 0.03
+        amount = 0.1
         out = np.copy(self.image)
 
         num_salt = np.ceil(amount * self.image.size * s_vs_p)
