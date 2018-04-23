@@ -5,6 +5,8 @@ from model.hmf import HomomorphicFilter
 from model.histogram import Histogram
 from model.noise import Noise
 from model.medianf import MedianFilter
+from model.kmeans import Kmeans
+from model.threshold import Threshold
 
 
 class Alpr:
@@ -19,12 +21,13 @@ class Alpr:
         img = cv.resize(img, (0, 0), fx=0.8, fy=0.8)
         cv.imwrite('../bin/' + self.img_name + '-gray.png', img)
 
-        img = self.noise_filtering(img)
+        self.noise_filtering(img)
 
         processed = self.frequency_domain_filtering(img)
-
-        print('- Writting image')
         cv.imwrite('../bin/' + self.img_name + '.png', processed)
+
+        threshold = self.segmentation(processed)
+        cv.imwrite('../bin/' + self.img_name + '-threshold.png', threshold)
 
     def noise_filtering(self, img):
         print('- Applying noise')
@@ -44,10 +47,23 @@ class Alpr:
         adaptive = mf.adaptive_filter()
         cv.imwrite('../bin/' + self.img_name + '-clean-adpt.png', adaptive)
 
-        mf = MedianFilter(img, window, thresold)
-        clean = mf.adaptive_filter()
+        return adaptive
 
-        return clean
+    def segmentation(self, img):
+        print('- Segmentation')
+
+        histogram = Histogram.discrete_histogram(img)
+
+        print('  - K-means')
+        groups = 2
+        km = Kmeans(groups, histogram)
+        clusters = km.process()
+
+        print('  - Thresold')
+        th = Threshold(img, clusters, groups)
+        threshold = th.process()
+
+        return threshold
 
     def frequency_domain_filtering(self, img):
         print('- Frequency-domain Filtering')

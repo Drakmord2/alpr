@@ -5,13 +5,24 @@ class Histogram:
     @staticmethod
     def histogram(img):
         m, n = img.shape
-        
+
         h = [0.0] * 256
         for i in range(m):
             for j in range(n):
                 h[img[i, j]] += 1
-                
+
         return np.array(h)/(m*n)
+
+    @staticmethod
+    def discrete_histogram(img):
+        m, n = img.shape
+
+        h = [0] * 256
+        for i in range(m):
+            for j in range(n):
+                h[img[i, j]] += 1
+
+        return np.array(h)
 
     @staticmethod
     def cum_sum(h):
