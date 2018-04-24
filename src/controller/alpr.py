@@ -54,14 +54,20 @@ class Alpr:
 
         histogram = Histogram.discrete_histogram(img)
 
-        print('  - K-means')
         groups = 2
+        print('  - K-means [k='+str(groups)+']')
         km = Kmeans(groups, histogram)
         clusters = km.process()
 
-        print('  - Thresold')
+        print('  - Threshold')
         th = Threshold(img, clusters, groups)
         threshold = th.process()
+        cv.imwrite('../bin/' + self.img_name + '-kmeans.png', threshold)
+
+        threshold = cv.adaptiveThreshold(img, 255.0, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 19, 9)
+        cv.imwrite('../bin/' + self.img_name + '-gaussian.png', threshold)
+
+        ret2, threshold = cv.threshold(img, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
 
         return threshold
 
