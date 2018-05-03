@@ -19,53 +19,28 @@ class Alpr:
 
         img = cv.imread('../base/' + self.img_name + '.png', 0)
         img = cv.resize(img, (0, 0), fx=0.8, fy=0.8)
-        cv.imwrite('../bin/' + self.img_name + '-gray.png', img)
+        cv.imwrite('../bin/' + self.img_name + '.png', img)
 
-        self.noise_filtering(img)
-
-        processed = self.frequency_domain_filtering(img)
-        cv.imwrite('../bin/' + self.img_name + '.png', processed)
+        filtered = self.noise_filtering(img)
+        processed = self.frequency_domain_filtering(filtered)
+        cv.imwrite('../bin/' + self.img_name + '-filtered.png', processed)
 
         threshold = self.segmentation(processed)
         cv.imwrite('../bin/' + self.img_name + '-threshold.png', threshold)
 
+        self.morphology(threshold)
+
     def noise_filtering(self, img):
-        print('- Applying noise')
-        noise = Noise("salt-pepper", img)
-        noisy = noise.apply()
-
-        cv.imwrite('../bin/' + self.img_name + '-noisy.png', noisy)
-
-        print('- Filtering noise')
+        print('- Filtering Noise')
         window = 1
         thresold = 1
-        mf = MedianFilter(noisy, window, thresold)
-
-        median = mf.filter()
-        cv.imwrite('../bin/' + self.img_name + '-clean.png', median)
-
+        mf = MedianFilter(img, window, thresold)
         adaptive = mf.adaptive_filter()
-        cv.imwrite('../bin/' + self.img_name + '-clean-adpt.png', adaptive)
 
         return adaptive
 
     def segmentation(self, img):
         print('- Segmentation')
-
-        histogram = Histogram.discrete_histogram(img)
-
-        groups = 2
-        print('  - K-means [k='+str(groups)+']')
-        km = Kmeans(groups, histogram)
-        clusters = km.process()
-
-        print('  - Threshold')
-        th = Threshold(img, clusters, groups)
-        threshold = th.process()
-        cv.imwrite('../bin/' + self.img_name + '-kmeans.png', threshold)
-
-        threshold = cv.adaptiveThreshold(img, 255.0, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 19, 9)
-        cv.imwrite('../bin/' + self.img_name + '-gaussian.png', threshold)
 
         ret2, threshold = cv.threshold(img, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
 
@@ -78,36 +53,33 @@ class Alpr:
         hmf = HomomorphicFilter(img)
         filtered = hmf.filter()
 
-        print('  - Equalizing histogram')
+        print('  - Equalizing Histogram')
         equalized, _, _, _ = Histogram.equalize(filtered)
 
         return equalized
 
-    def space_domain_filtering(self, img):
-        print('- Space-domain Filtering')
+    def morphology(self, img):
+        print('- Morphology')
 
-        print('  - Equalizing histogram')
-        equalized, _, _, _ = Histogram.equalize(img)
+        kernel = [[0, 1, 0],
+                  [1, 1, 1],
+                  [0, 1, 0]]
+        kernel = np.array(kernel, np.uint8)
 
-        print('  - Applying smoothing filter')
-        kernel = np.ones((3, 3), np.float32) / 9
-        filtered = cv.filter2D(equalized, -1, kernel)  # TODO Implement filter
-
-        print('  - Improving contrast')
-        result = self.enhance_contrast(filtered)  # TODO Implement functions
-
-        return result
-
-    def enhance_contrast(self, img):
-        kernel = np.ones((3, 3), np.uint8)
+        erosion = cv.erode(img, kernel, iterations=1)
+        dilation = cv.dilate(img, kernel, iterations=1)
+        opening = cv.morphologyEx(img, cv.MORPH_OPEN, kernel)
+        closing = cv.morphologyEx(img, cv.MORPH_CLOSE, kernel)
+        gradient = cv.morphologyEx(img, cv.MORPH_GRADIENT, kernel)
 
         top_hat = cv.morphologyEx(img, cv.MORPH_TOPHAT, kernel)
         black_hat = cv.morphologyEx(img, cv.MORPH_BLACKHAT, kernel)
 
-        print('  - Enhancing details')
-        img_top = cv.add(img, top_hat)
+        cv.imwrite('../bin/' + self.img_name + '-tophat.png', top_hat)
+        cv.imwrite('../bin/' + self.img_name + '-blackhat.png', black_hat)
+        cv.imwrite('../bin/' + self.img_name + '-erosion.png', erosion)
+        cv.imwrite('../bin/' + self.img_name + '-dilation.png', dilation)
+        cv.imwrite('../bin/' + self.img_name + '-opening.png', opening)
+        cv.imwrite('../bin/' + self.img_name + '-closing.png', closing)
+        cv.imwrite('../bin/' + self.img_name + '-gradient.png', gradient)
 
-        print('  - Removing noise from foreground')
-        enhanced = cv.subtract(img_top, black_hat)
-
-        return enhanced
