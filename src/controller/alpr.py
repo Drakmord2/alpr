@@ -68,21 +68,8 @@ class Alpr:
         kernel = np.ones((3, 3))
         kernel = np.array(kernel, np.uint8)
 
-        erosion = morph.erosion(img, kernel)
-        dilation = morph.dilation(img, kernel)
         closing = morph.closing(img, kernel)
-        opening = morph.opening(img, kernel)
-        gradient = morph.gradient(img, kernel)
-        top_hat = morph.top_hat(img, kernel)
-        black_hat = morph.black_hat(img, kernel)
-
-        cv.imwrite('../bin/' + self.img_name + '-erosion.png', erosion)
-        cv.imwrite('../bin/' + self.img_name + '-dilation.png', dilation)
         cv.imwrite('../bin/' + self.img_name + '-closing.png', closing)
-        cv.imwrite('../bin/' + self.img_name + '-opening.png', opening)
-        cv.imwrite('../bin/' + self.img_name + '-gradient.png', gradient)
-        cv.imwrite('../bin/' + self.img_name + '-tophat.png', top_hat)
-        cv.imwrite('../bin/' + self.img_name + '-blackhat.png', black_hat)
 
     def crop(self, img):
         print('- Cropping')
