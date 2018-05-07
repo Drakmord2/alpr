@@ -42,7 +42,10 @@ class Alpr:
     def segmentation(self, img):
         print('- Segmentation')
 
-        threshold = cv.adaptiveThreshold(img, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY_INV, 3, 9)
+        window = 5
+        mean_c = 13
+        th = Threshold(img)
+        threshold = th.process_adaptive(window, mean_c)
 
         return threshold
 
