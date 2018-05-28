@@ -26,10 +26,10 @@ class Alpr:
         filtered = self.noise_filtering(img)
         processed = self.frequency_domain_filtering(filtered)
 
-        self.compress(processed)
-
         threshold = self.segmentation(processed)
         threshold = self.morphology(threshold)
+
+        self.compress(threshold)
 
         #  TODO Separar cada letra para representar e classificar (MSER?)
         self.representation(threshold)
@@ -39,9 +39,11 @@ class Alpr:
         compression = Compression(img)
 
         compressed, tree = compression.huffman()
-        self.write(str(compressed), self.img_name + '-compressed.txt')
+        str_compr = compression.run_length(compressed)
 
-        decompressed = compression.decode(compressed, tree)
+        self.write(str_compr, self.img_name + '-compressed.txt')
+
+        decompressed = compression.decode_huffman(compressed, tree)
         cv.imwrite('../bin/' + self.img_name + '-huffman-decoded.png', decompressed)
 
     def noise_filtering(self, img):

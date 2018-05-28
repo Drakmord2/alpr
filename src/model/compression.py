@@ -72,8 +72,8 @@ class Compression:
 
         return encoded
 
-    def decode(self, encoded, root):
-        print('    - Decoding')
+    def decode_huffman(self, encoded, root):
+        print('  - Huffman Decoding')
 
         code = {}
         self.get_code("", root, code)
@@ -150,7 +150,35 @@ class Compression:
 
         return value
 
-    def run_length(self):
+    def run_length(self, data):
+        print('  - Run-Lengh Encoding')
+        lines = len(data)
+        col = len(data[0])
+        rle = ''
+
+        for i in range(lines):
+            run = ''
+            counter = 0
+            for j in range(col-1):
+                counter += 1
+
+                if data[i][j] != data[i][j+1] or j == col-2:
+                    if j == col-2:
+                        counter += 1
+
+                    if data[i][j] == '0':
+                        run += str(counter) + "W"
+                        counter = 0
+                        continue
+
+                    run += str(counter) + "B"
+                    counter = 0
+
+            rle += run + '\n'
+
+        return rle
+
+    def decode_rle(self):
         pass
 
 
