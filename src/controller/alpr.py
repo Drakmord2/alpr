@@ -9,6 +9,7 @@ from model.kmeans import Kmeans
 from model.threshold import Threshold
 from model.morphology import Morphology
 from model.representation import Representation
+from model.compression import Compression
 
 
 class Alpr:
@@ -24,10 +25,24 @@ class Alpr:
 
         filtered = self.noise_filtering(img)
         processed = self.frequency_domain_filtering(filtered)
+
+        self.compress(processed)
+
         threshold = self.segmentation(processed)
         threshold = self.morphology(threshold)
 
+        #  TODO Separar cada letra para representar e classificar (MSER?)
         self.representation(threshold)
+
+    def compress(self, img):
+        print('- Compression')
+        compression = Compression(img)
+
+        compressed, tree = compression.huffman()
+        self.write(str(compressed), self.img_name + '-compressed.txt')
+
+        decompressed = compression.decode(compressed, tree)
+        cv.imwrite('../bin/' + self.img_name + '-huffman-decoded.png', decompressed)
 
     def noise_filtering(self, img):
         print('- Filtering Noise')
@@ -40,12 +55,11 @@ class Alpr:
 
     def segmentation(self, img):
         print('- Segmentation')
-
-        window = 5
-        mean_c = 13
         th = Threshold(img)
-        threshold = th.process_adaptive(window, mean_c)
 
+        window = 11
+        mean_c = 19
+        threshold = th.process_adaptive(window, mean_c)
         cv.imwrite('../bin/' + self.img_name + '-threshold.png', threshold)
 
         return threshold
@@ -79,27 +93,15 @@ class Alpr:
 
         moments = cv.moments(img, True)
         hu = cv.HuMoments(moments)
+        hulog = -np.sign(hu) * np.log10(np.abs(hu))
 
         hustr = ''
-        for i in range(len(hu)):
+        for i in range(len(hulog)):
             hustr = hustr + '\n\tI' + str(i+1) + ': ' + str(hu[i][0])
 
         print('   - Hu Moments: ', hustr)
 
-        # Comparacao
-        # hulog = -np.sign(hu) * np.log10(np.abs(hu))
-
-        # print('  - Chain Code')
-        # rep = Representation(img, self.img_name)
-
-        # while True:
-        #     next = rep.chain_code()
-        #
-        #     if not next:
-        #         plt.close()
-        #         break
-
-        return hu
+        return hulog
 
     def crop(self, img):
         print('- Cropping')
@@ -163,3 +165,13 @@ class Alpr:
         colors = (b, g, r)
 
         return colors
+
+    def write(self, data, name):
+        try:
+            file = open('../bin/'+name, 'w')
+            file.write(data)
+        except Exception:
+            print('\n* File error\n')
+        finally:
+            if file:
+                file.close()

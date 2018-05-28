@@ -30,7 +30,6 @@ class Representation:
 
         dir2idx = dict(zip(directions, range(len(directions))))
 
-        # TODO problema
         border = []
         chain = []
         curr_point = start_point
@@ -112,6 +111,3 @@ class Representation:
             break
 
         return start_point
-
-    def skeleton(self):
-        pass
