@@ -91,23 +91,22 @@ class Alpr:
 
             proportion = h / w
             if 1.3 < proportion < 1.7:
-                # if w > 60 or h > 60:
-                #     continue
-                #
-                # # if w < 30 or h < 40:
-                # if w < 10 or h < 10:
-                #     continue
+                if w > 40 or h > 80:
+                    continue
+
+                if w < 20 or h < 40:
+                    continue
 
                 colors = self.contour_color()
                 cv.rectangle(img, (x, y), (x + w, y + h), colors, 2)
                 boxes.append([x, y, w, h])
 
             if 4 < proportion < 5.5:
-                # if w > 15 or h > 80:
-                #     continue
-                #
-                # if w < 3 or h < 14:
-                #     continue
+                if w > 15 or h > 80:
+                    continue
+
+                if w < 5 or h < 30:
+                    continue
 
                 colors = self.contour_color()
                 cv.rectangle(img, (x, y), (x + w, y + h), colors, 2)
@@ -138,20 +137,11 @@ class Alpr:
 
     def classification(self, contours):
         print('- Classification')
+
         knn = KNN()
+        result = knn.classify(contours)
 
-        symbols = []
-        for file in contours:
-            symbol = cv.imread(file, 0)
-            hulog = self.representation(symbol)
-
-            symbol = knn.classify(hulog)
-            if symbol:
-                symbols.append(symbol)
-
-        print('Captured: ', symbols)
-        if len(symbols) == 7:
-            print('  - Possible License Plate: ', symbols)
+        print("    - License Plate Detected: ", result)
 
     def compress(self, img, binary=False):
         print('- Compression')
