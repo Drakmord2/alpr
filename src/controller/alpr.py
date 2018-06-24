@@ -92,13 +92,13 @@ class Alpr:
 
             if 1.1 <= proportion <= 2:
                 if 15 <= w <= 50 and 25 <= h <= 50:
-                    colors = self.contour_color()
+                    colors = self.contour_color(True)
                     cv.rectangle(img, (x, y), (x + w, y + h), colors, 2)
                     boxes.append([x, y, w, h])
 
             if 4.1 <= proportion <= 5.5:
                 if 3 <= w <= 15 and 30 <= h <= 80:
-                    colors = self.contour_color()
+                    colors = self.contour_color(True)
                     cv.rectangle(img, (x, y), (x + w, y + h), colors, 2)
                     boxes.append([x, y, w, h])
 
@@ -119,11 +119,11 @@ class Alpr:
 
         results = self.validate_plates(result)
 
-        if len(results) != 0:
+        if isinstance(results, list):
             print("    - License Plates Detected: ", results)
             return
 
-        print("    - Characters Detected: ", result)
+        print("    - Characters Detected: ", results)
 
     def validate_plates(self, result):
         regex = re.compile('[A-Z12578]{3,3}[0-9IZSTB]{4,4}')
@@ -143,8 +143,8 @@ class Alpr:
         return result
 
     def remove_ambiguity(self, letters, numbers):
-        letter_replace = {'1': 'I', '2': 'Z', '5': 'S', '7': 'T', '8': 'B'}
-        number_replace = {'I': '1', 'Z': '2', 'S': '5', 'T': '7', 'B': '8'}
+        letter_replace = {'1': 'I', '2': 'Z', '5': 'S', '7': 'T', '8': 'B', '0': 'O'}
+        number_replace = {'I': '1', 'Z': '2', 'S': '5', 'T': '7', 'B': '8', 'O': '0'}
 
         correct_letters = ''
         for letter in letters:
@@ -191,7 +191,10 @@ class Alpr:
 
         return hulog
 
-    def contour_color(self):
+    def contour_color(self, red=False):
+        if red:
+            return (0, 0, 255)
+
         b = np.random.randint(50, 200)
         g = np.random.randint(50, 200)
         r = np.random.randint(50, 200)
