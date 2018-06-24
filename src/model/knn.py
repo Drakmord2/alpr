@@ -10,34 +10,33 @@ class KNN:
     def train(self):
         pass
 
-    def classify(self, digits):
+    def classify(self, candidates):
         print("  - KNN")
         result = ""
 
-        npaClassifications = np.loadtxt("../bin/recognition/classifications.txt", np.float32)
-        npaClassifications = npaClassifications.reshape((npaClassifications.size, 1))
-        npaFlattenedImages = np.loadtxt("../bin/recognition/flattened_images.txt", np.float32)
+        classifications = np.loadtxt("../base/recognition/classifications.txt", np.float32)
+        classifications = classifications.reshape((classifications.size, 1))
+        flattened_images = np.loadtxt("../base/recognition/flattened_images.txt", np.float32)
 
-        kNearest = cv.ml.KNearest_create()
+        knn = cv.ml.KNearest_create()
+        knn.train(flattened_images, cv.ml.ROW_SAMPLE, classifications)
 
-        kNearest.train(npaFlattenedImages, cv.ml.ROW_SAMPLE, npaClassifications)
-
-        for file in digits:
+        for file in candidates:
             img = cv.imread(file, 0)
 
-            imgROIResized = cv.resize(img, (34, 52))
-            npaROIResized = imgROIResized.reshape((1, 34 * 52))
-            npaROIResized = np.float32(npaROIResized)
+            img_resized = cv.resize(img, (34, 52))
+            img_resized = img_resized.reshape((1, 34 * 52))
+            img_resized = np.float32(img_resized)
 
-            retval, npaResults, neigh_resp, dists = kNearest.findNearest(npaROIResized, k=1)
+            retval, results, neigh_resp, dists = knn.findNearest(img_resized, k=1)
 
-            strCurrentChar = str(chr(int(npaResults[0][0])))  # get character from results
+            current_char = str(chr(int(results[0][0])))
 
-            result += strCurrentChar
+            result += current_char
 
         return result
     
-    def get_data(self):
+    def get_training_data(self):
         digits = ["../templates/mandatory/boxes/z.png", "../templates/mandatory/boxes/y.png", "../templates/mandatory/boxes/x.png",
                   "../templates/mandatory/boxes/w.png", "../templates/mandatory/boxes/v.png", "../templates/mandatory/boxes/u.png",
                   "../templates/mandatory/boxes/t.png", "../templates/mandatory/boxes/s.png", "../templates/mandatory/boxes/r.png",
@@ -67,5 +66,5 @@ class KNN:
         classifications = np.array(classifications, np.float32)
         classifications = classifications.reshape(classifications.size, 1)
 
-        np.savetxt("../bin/classifications.txt", classifications)
-        np.savetxt("../bin/flattened_images.txt", flattened_images)
+        np.savetxt("../base/classifications.txt", classifications)
+        np.savetxt("../base/flattened_images.txt", flattened_images)

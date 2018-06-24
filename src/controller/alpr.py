@@ -1,5 +1,6 @@
 import cv2 as cv
 import numpy as np
+import re
 from matplotlib import pyplot as plt
 from util.csvUtil import CSVUtil
 from model.hmf import HomomorphicFilter
@@ -24,7 +25,6 @@ class Alpr:
         self.img_name = img_name
 
         img = cv.imread('../base/' + self.img_name + '.png', 0)
-        # img = self.crop(img)
 
         filtered = self.noise_filtering(img)
         filtered = self.frequency_domain_filtering(filtered)
@@ -79,10 +79,10 @@ class Alpr:
         return closing
 
     def contour(self, img):
-        print('- Contour')
+        print('- Contours')
         img = np.array(img, dtype=np.uint8)
 
-        img_contours, contours, _ = cv.findContours(img, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        img_contours, contours, _ = cv.findContours(img, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 
         img = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
         boxes = []
@@ -90,29 +90,21 @@ class Alpr:
             [x, y, w, h] = cv.boundingRect(contour)
 
             proportion = h / w
-            if 1.3 < proportion < 1.7:
-                if w > 40 or h > 80:
-                    continue
 
-                if w < 20 or h < 40:
-                    continue
+            if 1.1 <= proportion <= 2:
+                if 15 <= w <= 50 and 25 <= h <= 50:
+                    colors = self.contour_color()
+                    cv.rectangle(img, (x, y), (x + w, y + h), colors, 2)
+                    boxes.append([x, y, w, h])
 
-                colors = self.contour_color()
-                cv.rectangle(img, (x, y), (x + w, y + h), colors, 2)
-                boxes.append([x, y, w, h])
+            if 4.1 <= proportion <= 5.5:
+                if 3 <= w <= 15 and 40 <= h <= 80:
+                    colors = self.contour_color()
+                    cv.rectangle(img, (x, y), (x + w, y + h), colors, 2)
+                    boxes.append([x, y, w, h])
 
-            if 4 < proportion < 5.5:
-                if w > 15 or h > 80:
-                    continue
+        cv.imwrite('../bin/' + self.img_name + '-contours.png', img)
 
-                if w < 5 or h < 30:
-                    continue
-
-                colors = self.contour_color()
-                cv.rectangle(img, (x, y), (x + w, y + h), colors, 2)
-                boxes.append([x, y, w, h])
-
-        cv.imwrite('../bin/' + self.img_name + '-contour.png', img)
         if len(boxes) >= 7:
             boxes_files = self.save_boxes(img_contours, boxes)
 
@@ -135,13 +127,20 @@ class Alpr:
 
         return hulog
 
-    def classification(self, contours):
+    def classification(self, candidates):
         print('- Classification')
 
         knn = KNN()
-        result = knn.classify(contours)
+        result = knn.classify(candidates)
 
-        print("    - License Plate Detected: ", result)
+        regex = re.compile('[A-Z]{3,3}[0-9]{4,4}')
+        results = regex.findall(result)
+
+        if len(results) != 0:
+            print("    - License Plates Detected: ", results)
+            return
+
+        print("    - Characters Detected: ", result)
 
     def compress(self, img, binary=False):
         print('- Compression')
@@ -170,7 +169,7 @@ class Alpr:
         files = []
         cont = 0
 
-        boxes = sorted(boxes, key=lambda boxi: boxi[1], reverse=True)
+        boxes = sorted(boxes, key=lambda boxi: boxi[0])
 
         for box in boxes:
             [x, y, w, h] = box
