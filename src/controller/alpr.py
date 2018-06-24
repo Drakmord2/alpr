@@ -64,7 +64,6 @@ class Alpr:
         window = 13
         mean_c = 6
         threshold = th.process_adaptive(window, mean_c)
-        cv.imwrite('../bin/' + self.img_name + '-threshold.png', threshold)
 
         return threshold
 
@@ -98,7 +97,7 @@ class Alpr:
                     boxes.append([x, y, w, h])
 
             if 4.1 <= proportion <= 5.5:
-                if 3 <= w <= 15 and 40 <= h <= 80:
+                if 3 <= w <= 15 and 30 <= h <= 80:
                     colors = self.contour_color()
                     cv.rectangle(img, (x, y), (x + w, y + h), colors, 2)
                     boxes.append([x, y, w, h])
@@ -111,6 +110,71 @@ class Alpr:
             return boxes_files
 
         return False
+
+    def classification(self, candidates):
+        print('- Classification')
+
+        knn = KNN()
+        result = knn.classify(candidates)
+
+        results = self.validate_plates(result)
+
+        if len(results) != 0:
+            print("    - License Plates Detected: ", results)
+            return
+
+        print("    - Characters Detected: ", result)
+
+    def validate_plates(self, result):
+        regex = re.compile('[A-Z12578]{3,3}[0-9IZSTB]{4,4}')
+        results = regex.findall(result)
+
+        if len(results) != 0:
+            plates = []
+            for plate in results:
+                letters = plate[:3]
+                numbers = plate[3:]
+                letters, numbers = self.remove_ambiguity(letters, numbers)
+                plate = letters+'-'+numbers
+                plates.append(plate)
+
+            return plates
+
+        return result
+
+    def remove_ambiguity(self, letters, numbers):
+        letter_replace = {'1': 'I', '2': 'Z', '5': 'S', '7': 'T', '8': 'B'}
+        number_replace = {'I': '1', 'Z': '2', 'S': '5', 'T': '7', 'B': '8'}
+
+        correct_letters = ''
+        for letter in letters:
+            if letter in letter_replace.keys():
+                correct_letters += letter_replace.get(letter)
+                continue
+            correct_letters += letter
+
+        correct_numbers = ''
+        for number in numbers:
+            if number in number_replace.keys():
+                correct_numbers += number_replace.get(number)
+                continue
+            correct_numbers += number
+
+        return correct_letters, correct_numbers
+
+    def compress(self, img, binary=False):
+        print('- Compression')
+
+        compression = Compression(img)
+        compressed, tree = compression.huffman()
+
+        if binary:
+            str_compr = compression.run_length(compressed)
+            self.write_file(str_compr, self.img_name + '-thresholdcompressed.txt')
+            return
+
+        decompressed = compression.decode_huffman(compressed, tree)
+        cv.imwrite('../bin/' + self.img_name + '-huffman-decoded.png', decompressed)
 
     def representation(self, img, show=False):
         moments = cv.moments(img, True)
@@ -126,35 +190,6 @@ class Alpr:
             print('   - Hu Moments: ', hustr)
 
         return hulog
-
-    def classification(self, candidates):
-        print('- Classification')
-
-        knn = KNN()
-        result = knn.classify(candidates)
-
-        regex = re.compile('[A-Z]{3,3}[0-9]{4,4}')
-        results = regex.findall(result)
-
-        if len(results) != 0:
-            print("    - License Plates Detected: ", results)
-            return
-
-        print("    - Characters Detected: ", result)
-
-    def compress(self, img, binary=False):
-        print('- Compression')
-
-        compression = Compression(img)
-        compressed, tree = compression.huffman()
-
-        if binary:
-            str_compr = compression.run_length(compressed)
-            self.write_file(str_compr, self.img_name + '-thresholdcompressed.txt')
-            return
-
-        decompressed = compression.decode_huffman(compressed, tree)
-        cv.imwrite('../bin/' + self.img_name + '-huffman-decoded.png', decompressed)
 
     def contour_color(self):
         b = np.random.randint(50, 200)
