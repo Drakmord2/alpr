@@ -20,7 +20,11 @@ class Morphology:
 
         return image
 
-    def closing(self, image, kernel):
+    def closing(self, image, kernel, opencv=False):
+        if opencv:
+            image = cv.morphologyEx(image, cv.MORPH_CLOSE, kernel)
+            return image
+
         image = self.dilation(image, kernel)
         image = self.erosion(image, kernel)
 

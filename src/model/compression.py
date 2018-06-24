@@ -1,5 +1,4 @@
 import numpy as np
-from matplotlib import pyplot as plt
 
 
 class Compression:
@@ -63,7 +62,6 @@ class Compression:
 
         x, y = self.image.shape
         encoded = [['' for j in range(y)] for i in range(x)]
-        # encoded = np.zeros((x, y))
 
         for i in range(x):
             for j in range(y):
@@ -80,7 +78,6 @@ class Compression:
 
         x = len(encoded)
         y = len(encoded[0])
-        # x, y = encoded.shape
         decoded = np.zeros((x, y))
 
         for i in range(x):
