@@ -25,15 +25,17 @@ class Alpr:
         self.img_name = img_name
 
         img = cv.imread('../base/' + self.img_name + '.png', 0)
-
+        # Restoration
         filtered = self.noise_filtering(img)
+        # Enhancement
         filtered = self.frequency_domain_filtering(filtered)
-
+        # Segmentation
         threshold = self.segmentation(filtered)
+        # Morfology
         threshold = self.morphology(threshold)
-
+        # Extraction
         contours = self.contour(threshold)
-
+        # Recognition
         if contours:
             self.classification(contours)
 
@@ -53,8 +55,6 @@ class Alpr:
         hmf = HomomorphicFilter(img)
         filtered = hmf.filter()
 
-        cv.imwrite('../bin/' + self.img_name + '-filtered.png', filtered)
-
         return filtered
 
     def segmentation(self, img):
@@ -73,7 +73,6 @@ class Alpr:
 
         kernel = cv.getStructuringElement(cv.MORPH_CROSS, (3, 3))
         closing = morph.closing(img, kernel, True)
-        cv.imwrite('../bin/' + self.img_name + '-closing.png', closing)
 
         return closing
 
@@ -101,8 +100,6 @@ class Alpr:
                     colors = self.contour_color(True)
                     cv.rectangle(img, (x, y), (x + w, y + h), colors, 2)
                     boxes.append([x, y, w, h])
-
-        cv.imwrite('../bin/' + self.img_name + '-contours.png', img)
 
         if len(boxes) >= 7:
             boxes_files = self.save_boxes(img_contours, boxes)
